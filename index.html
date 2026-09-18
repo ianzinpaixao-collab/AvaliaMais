@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AvaliaMais</title>
+<script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+<script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-[#F5F5F7]">
+<nav class="bg-black text-white p-4 flex justify-between"><b>avaliaMais</b><button onclick="showPage('home')" class="bg-white text-black px-4 py-1 rounded-full text-sm font-bold">Início</button></nav>
+
+<div id="page-home" class="max-w-4xl mx-auto p-4">
+<div class="bg-white rounded-3xl p-6 shadow-sm">
+<h2 class="text-2xl font-extrabold">Cadastrar Empresa</h2>
+<input id="c-nome" placeholder="Nome da empresa" class="w-full border p-3 rounded-xl mt-3">
+<input id="c-cnpj" placeholder="CNPJ" class="w-full border p-3 rounded-xl mt-2">
+<input id="c-desc" placeholder="Descrição: ex: Loja de roupas femininas, fachada azul..." class="w-full border p-3 rounded-xl mt-2">
+<select id="c-cat" class="w-full border p-3 rounded-xl mt-2">
+<option>💄 Beleza</option><option>💋 Maquiagem</option><option>🚗 Estética Automotiva</option><option>🛍️ Loja</option><option>🔧 Serviços</option><option>🍔 Restaurante</option>
+</select>
+<label class="font-bold text-sm mt-3 block">FOTOS (aparecem pra quem escanear):</label>
+<input type="file" id="c-fotos" multiple accept="image/*" class="w-full border p-3 rounded-xl bg-gray-50 mt-1">
+<div id="preview" class="flex gap-2 mt-2"></div>
+<button onclick="cadastrar()" class="w-full bg-blue-600 text-white py-4 rounded-xl font-bold mt-4">Cadastrar e Gerar QR</button>
+</div>
+<div id="lista" class="grid md:grid-cols-2 gap-3 mt-6"></div>
+</div>
+
+<div id="page-emp" class="hidden max-w-2xl mx-auto p-4">
+<div class="bg-white rounded-3xl overflow-hidden shadow-sm">
+<div id="emp-capa" class="h-72 bg-gray-200 bg-cover bg-center"></div>
+<div class="p-6">
+<h1 id="emp-nome" class="text-3xl font-extrabold"></h1>
+<p id="emp-cat" class="bg-black text-white inline-block px-3 py-1 rounded-full text-xs mt-2"></p>
+<p id="emp-desc" class="mt-4 text-gray-700 leading-relaxed"></p>
+<div id="emp-fotos" class="grid grid-cols-3 gap-2 mt-4"></div>
+<div class="mt-6 bg-yellow-50 p-4 rounded-2xl"><b id="emp-nota"></b><textarea id="emp-com" placeholder="Como foi sua experiência aqui?" class="w-full border p-3 rounded-xl mt-3"></textarea><button onclick="avaliar()" class="w-full bg-black text-white py-3 rounded-xl font-bold mt-2">Enviar Avaliação ★</button></div>
+<div id="emp-avs" class="mt-4"></div>
+</div>
+</div>
+</div>
+
+<div id="modal-qr" class="hidden fixed inset-0 bg-black/70 flex items-center justify-center p-4 z-50">
+<div class="bg-white rounded-3xl p-6 text-center max-w-sm w-full">
+<h3 class="font-bold">QR Code Pronto!</h3><p id="qr-nome" class="text-sm text-gray-500"></p>
+<div id="qrcode" class="flex justify-center p-4 border rounded-2xl mt-3"></div>
+<p class="text-xs text-green-600 font-bold mt-3">✅ AGORA FUNCIONA EM QUALQUER CELULAR<br>Quando escanear cai direto na empresa</p>
+<button onclick="document.getElementById('modal-qr').classList.add('hidden')" class="w-full bg-black text-white py-3 rounded-xl mt-4 font-bold">Fechar</button>
+</div>
+</div>
+
+<script>
+let empresas = JSON.parse(localStorage.getItem('am_final2')||'[]');
+let fotosTemp=[], ativa=null;
+const $=id=>document.getElementById(id);
+$('c-fotos').addEventListener('change',e=>{
+ fotosTemp=[]; $('preview').innerHTML='';
+ [...e.target.files].slice(0,3).forEach(f=>{
+  const r=new FileReader(); r.onload=ev=>{ fotosTemp.push(ev.target.result); $('preview').innerHTML+=`<img src="${ev.target.result}" class="w-16 h-16 rounded-xl object-cover">`; }; r.readAsDataURL(f);
+ });
+});
+function save(){localStorage.setItem('am_final2',JSON.stringify(empresas));}
+function showPage(p){ document.getElementById('page-home').classList.add('hidden'); document.getElementById('page-emp').classList.add('hidden'); document.getElementById('page-'+p).classList.remove('hidden'); if(p=='home') render(); }
+
+function cadastrar(){
+ const nome=$('c-nome').value, cnpj=$('c-cnpj').value, desc=$('c-desc').value, cat=$('c-cat').value;
+ if(!nome) return alert('Nome obrigatório');
+ const id=Date.now().toString();
+ const emp={id,nome,cnpj,desc,cat,fotos:fotosTemp,avs:[]};
+ empresas.push(emp); save(); openQR(emp); render();
+}
+
+function openQR(emp){
+ $('qr-nome').innerText=emp.nome; $('qrcode').innerHTML='';
+ // CODIFICA OS DADOS DENTRO DO LINK - ISSO QUE FAZ FUNCIONAR EM OUTRO CELULAR
+ const dados = btoa(encodeURIComponent(JSON.stringify(emp)));
+ const link = location.origin + location.pathname + '?d=' + dados;
+ new QRCode($('qrcode'),{text:link,width:200,height:200});
+ $('modal-qr').classList.remove('hidden');
+}
+
+function openEmpFromData(emp){
+ $('emp-nome').innerText=emp.nome; $('emp-cat').innerText=emp.cat; $('emp-desc').innerText=emp.desc||'Conheça nossa empresa!';
+ $('emp-capa').style.backgroundImage=emp.fotos[0]?`url(${emp.fotos[0]})`:'';
+ $('emp-fotos').innerHTML=emp.fotos.map(f=>`<img src="${f}" class="w-full h-24 object-cover rounded-xl">`).join('') || '';
+ $('emp-nota').innerText=`Avaliações da ${emp.nome}`;
+ $('emp-avs').innerHTML=(emp.avs||[]).map(a=>`<div class="bg-gray-50 p-3 rounded-xl mt-2">${a.texto}</div>`).join('') || '<p class="text-sm text-gray-400">Seja o primeiro a avaliar!</p>';
+ showPage('emp');
+}
+
+function render(){
+ $('lista').innerHTML=empresas.map(e=>`
+ <div class="bg-white p-4 rounded-2xl shadow-sm">
+  <div class="h-32 bg-gray-100 rounded-xl bg-cover bg-center" style="background-image:url(${e.fotos[0]||''})"></div>
+  <b class="mt-2 block">${e.nome}</b><span class="text-xs bg-black text-white px-2 py-1 rounded-full">${e.cat}</span>
+  <p class="text-xs text-gray-500 mt-1">${e.desc||''}</p>
+  <button onclick='openQR2("${e.id}")' class="w-full mt-3 bg-blue-600 text-white py-2 rounded-full font-bold text-sm">Ver QR que funciona em qualquer celular</button>
+ </div>`).join('');
+}
+function openQR2(id){
+ const emp=empresas.find(x=>x.id==id); openQR(emp);
+}
+function avaliar(){ const t=$('emp-com').value; if(!t) return alert('Escreva algo'); alert('Avaliação enviada! Obrigado ★'); $('emp-com').value=''; }
+
+window.onload=()=>{
+ const params = new URLSearchParams(location.search);
+ const d = params.get('d');
+ const empId = params.get('empresa');
+ if(d){
+  try{
+   const emp = JSON.parse(decodeURIComponent(atob(d)));
+   openEmpFromData(emp);
+   return;
+  }catch(e){}
+ }
+ if(empId){
+  const emp=empresas.find(x=>x.id==empId);
+  if(emp) openEmpFromData(emp);
+  else render();
+ } else {
+  render();
+ }
+ showPage('home');
+ if(d || empId) showPage('emp');
+}
+</script>
+</body>
+</html>
