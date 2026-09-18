@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>avaliaMais - Avaliação por QR Code</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:'Inter',sans-serif}
+body{background:#f8fafc;color:#0f172a}
+header{display:flex;justify-content:space-between;align-items:center;padding:18px 5%;background:#0f172a;color:#fff}
+.logo{font-weight:800;font-size:26px}.logo span{color:#3b82f6}
+.hero{text-align:center;padding:80px 8%;background:linear-gradient(180deg,#0f172a,#1e3a8a);color:#fff}
+.hero h1{font-size:38px;max-width:750px;margin:0 auto 12px;line-height:1.1}
+.btn{background:#3b82f6;color:#fff;padding:14px 28px;border-radius:12px;font-weight:700;border:none;cursor:pointer;text-decoration:none;display:inline-block;margin:8px}
+.btn-dark{background:#0f172a}
+.container{max-width:600px;margin:30px auto;background:#fff;padding:28px;border-radius:16px;box-shadow:0 10px 30px rgba(0,0,0,.08)}
+input,select,textarea{width:100%;padding:14px;margin:8px 0;border:1px solid #e2e8f0;border-radius:10px;outline:none}
+textarea{height:100px}
+.ranking{max-width:900px;margin:20px auto;display:grid;gap:12px;padding:0 5%}
+.card{background:#fff;padding:18px;border-radius:12px;display:flex;justify-content:space-between;align-items:center;box-shadow:0 2px 10px rgba(0,0,0,.06)}
+.stars{font-size:44px;cursor:pointer;color:#e2e8f0;text-align:center}
+.stars span.active{color:#f59e0b}
+.hidden{display:none}
+table{width:100%;border-collapse:collapse}th,td{padding:10px;border:1px solid #e2e8f0;font-size:13px;text-align:left}
+.search{max-width:500px;margin:-30px auto 30px;padding:0 5%}
+#busca{box-shadow:0 8px 20px rgba(0,0,0,.1)}
+</style>
+</head>
+<body>
+<header>
+<div class="logo">avalia<span>Mais</span></div>
+<div><a href="#" onclick="showHome()" style="color:#fff;margin-right:15px;text-decoration:none">Arena</a><a href="#" onclick="showAdmin()" style="color:#3b82f6;font-weight:700;text-decoration:none">Admin</a></div>
+</header>
+
+<!-- HOME -->
+<div id="home">
+<section class="hero">
+<h1>Transforme cada cliente em uma avaliação 5 estrelas</h1>
+<p style="opacity:.8;margin:10px 0 20px">Cadastre com CNPJ e gere um QR Code único para seus clientes avaliarem</p>
+<button class="btn" onclick="showCadastro()">Cadastrar Minha Empresa Grátis</button>
+</section>
+<div class="search"><input type="text" id="busca" placeholder="🔍 Buscar empresa..." onkeyup="buscar()"></div>
+<h2 style="text-align:center;margin-top:10px">🏆 Arena avaliaMais - Top Avaliadas</h2>
+<div id="ranking" class="ranking"></div>
+</div>
+
+<!-- CADASTRO -->
+<div id="cadastroPage" class="hidden">
+<div class="container">
+<h2>Cadastre sua Empresa</h2>
+<form id="formEmpresa">
+<input type="text" id="nome" placeholder="Nome da Empresa" required>
+<input type="text" id="cnpj" placeholder="CNPJ (00.000.000/0000-00)" required maxlength="18">
+<input type="email" id="email" placeholder="E-mail da Empresa" required>
+<input type="text" id="telefone" placeholder="WhatsApp" required>
+<select id="categoria" required><option value="">Categoria</option><option>Restaurante</option><option>Loja</option><option>Serviços</option><option>Beleza</option><option>Saúde</option><option>Outro</option></select>
+<button type="submit" class="btn" style="width:100%">Gerar meu QR Code Único</button>
+</form>
+<div id="resultado" class="hidden" style="text-align:center">
+<h3>✅ Empresa Cadastrada!</h3>
+<p>Seu QR Code único foi gerado. Imprima e cole no seu estabelecimento.</p>
+<div id="qrcode" style="display:flex;justify-content:center;margin:20px 0"></div>
+<p id="linkQR" style="font-size:11px;word-break:break-all;background:#f1f5f9;padding:10px;border-radius:8px"></p>
+<button class="btn" onclick="showHome();location.reload()">Ir para Arena</button>
+<button class="btn btn-dark" onclick="window.print()">Imprimir QR</button>
+</div>
+</div>
+</div>
+
+<!-- AVALIAR -->
+<div id="avaliarPage" class="hidden">
+<div class="container" style="text-align:center">
+<h2 id="empresaNome">Carregando...</h2>
+<p>Avalie sua experiência</p>
+<div class="stars" id="stars"><span onclick="setStar(1)">★</span><span onclick="setStar(2)">★</span><span onclick="setStar(3)">★</span><span onclick="setStar(4)">★</span><span onclick="setStar(5)">★</span></div>
+<input type="text" id="clienteNome" placeholder="Seu nome (opcional)">
+<textarea id="comentario" placeholder="Conte como foi sua experiência..."></textarea>
+<button class="btn" style="width:100%" onclick="enviarAvaliacao()">Enviar Avaliação</button>
+<p id="msg" style="margin-top:15px;font-weight:700"></p>
+</div>
+</div>
+
+<!-- ADMIN -->
+<div id="adminPage" class="hidden">
+<div class="container" style="max-width:1100px">
+<h2>🔒 Painel Admin - Controle Total</h2>
+<p style="margin:10px 0">Total de Empresas: <b id="totalE">0</b> | Total de Avaliações: <b id="totalA">0</b></p>
+<button class="btn" style="background:#10b981" onclick="exportCSV()">Exportar para Excel (CSV)</button>
+<button class="btn" style="background:#ef4444" onclick="if(confirm('Apagar TUDO?')){localStorage.clear();location.reload()}">Limpar Tudo</button>
+<button class="btn btn-dark" onclick="showHome()">Voltar ao Site</button>
+<div id="listaAdmin" style="margin-top:20px;display:grid;gap:10px"></div>
+</div>
+</div>
+
+<script>
+let empresas=JSON.parse(localStorage.getItem('avalia_empresas')||'[]');
+let avaliacoes=JSON.parse(localStorage.getItem('avalia_avaliacoes')||'[]');
+let notaAtual=0;
+const mascaraCNPJ=(v)=>{v=v.replace(/\D/g,'');v=v.replace(/^(\d{2})(\d)/,'$1.$2');v=v.replace(/^(\d{2})\.(\d{3})(\d)/,'$1.$2.$3');v=v.replace(/\.(\d{3})(\d)/,'.$1/$2');v=v.replace(/(\d{4})(\d)/,'$1-$2');return v;}
+document.getElementById('cnpj').addEventListener('input',function(){this.value=mascaraCNPJ(this.value)});
+function setStar(n){notaAtual=n;document.querySelectorAll('#stars span').forEach((s,i)=>{s.classList.toggle('active',i<n)})}
+function showCadastro(){home.classList.add('hidden');avaliarPage.classList.add('hidden');adminPage.classList.add('hidden');cadastroPage.classList.remove('hidden')}
+function showHome(){cadastroPage.classList.add('hidden');avaliarPage.classList.add('hidden');adminPage.classList.add('hidden');home.classList.remove('hidden');carregarHome()}
+function showAdmin(){home.classList.add('hidden');cadastroPage.classList.add('hidden');avaliarPage.classList.add('hidden');adminPage.classList.remove('hidden');carregarAdmin()}
+function carregarHome(){
+ let r=document.getElementById('ranking');
+ let lista=empresas.map(e=>{let avs=avaliacoes.filter(a=>a.empresaId===e.id);let media=avs.length?(avs.reduce((s,a)=>s+a.estrelas,0)/avs.length).toFixed(1):0;return {...e,total:avs.length,media:parseFloat(media)}}).sort((a,b)=>b.total-a.total||b.media-a.media);
+ if(!lista.length){r.innerHTML='<p style=text-align:center;padding:20px>Seja a primeira empresa! Clique em Cadastrar.</p>';return;}
+ r.innerHTML=lista.map((e,i)=>`<div class="card"><div><b>#${i+1} ${e.nome}</b> - ${e.categoria}<br><small>${e.total} avaliações | ${e.media} ★<br>CNPJ: ${e.cnpj}</small></div><button class="btn" onclick="abrirAvaliar('${e.id}')">Avaliar</button></div>`).join('');
+}
+function buscar(){let t=document.getElementById('busca').value.toLowerCase();document.querySelectorAll('.card').forEach(c=>c.style.display=c.innerText.toLowerCase().includes(t)?'flex':'none')}
+function abrirAvaliar(id){home.classList.add('hidden');cadastroPage.classList.add('hidden');adminPage.classList.add('hidden');avaliarPage.classList.remove('hidden');let emp=empresas.find(e=>e.id===id);if(emp){empresaNome.innerText=emp.nome;avaliarPage.dataset.id=id}else{empresaNome.innerText='Empresa não encontrada'}}
+document.getElementById('formEmpresa').addEventListener('submit',function(e){
+ e.preventDefault();
+ let empresa={id:Date.now().toString(),nome:document.getElementById('nome').value,cnpj:document.getElementById('cnpj').value,email:document.getElementById('email').value,telefone:document.getElementById('telefone').value,categoria:document.getElementById('categoria').value,data:new Date().toLocaleString()};
+ empresas.push(empresa);localStorage.setItem('avalia_empresas',JSON.stringify(empresas));
+ let link=window.location.href.split('?')[0]+'?avaliar='+empresa.id;
+ document.getElementById('formEmpresa').classList.add('hidden');document.getElementById('resultado').classList.remove('hidden');document.getElementById('linkQR').innerText=link;
+ document.getElementById('qrcode').innerHTML='';new QRCode(document.getElementById('qrcode'),{text:link,width:200,height:200});
+ carregarHome();
+});
+function enviarAvaliacao(){if(!notaAtual){alert('Escolha as estrelas!');return;}let id=avaliarPage.dataset.id||new URLSearchParams(window.location.search).get('avaliar');avaliacoes.push({empresaId:id,estrelas:notaAtual,cliente:document.getElementById('clienteNome').value||'Anônimo',comentario:document.getElementById('comentario').value,data:new Date().toLocaleString()});localStorage.setItem('avalia_avaliacoes',JSON.stringify(avaliacoes));document.getElementById('msg').innerText='✅ Avaliação enviada com sucesso!';setTimeout(()=>{showHome()},1500);}
+function carregarAdmin(){document.getElementById('totalE').innerText=empresas.length;document.getElementById('totalA').innerText=avaliacoes.length;document.getElementById('listaAdmin').innerHTML=empresas.map(e=>{let avs=avaliacoes.filter(a=>a.empresaId===e.id);let m=avs.length?(avs.reduce((s,a)=>s+a.estrelas,0)/avs.length).toFixed(1):'-';return `<div class="card"><div><b>${e.nome}</b> - ${e.categoria}<br>CNPJ: ${e.cnpj} | ${e.email} | ${e.telefone}<br>Média: ${m} ★ | Total: ${avs.length} avaliações | Cadastro: ${e.data}</div><a href="${window.location.href.split('?')[0]}?avaliar=${e.id}" target="_blank" class="btn" style="padding:8px 12px">Ver QR</a></div>`}).join('')}
+function exportCSV(){let csv='Nome,CNPJ,Email,Telefone,Categoria,Media,Total Avaliacoes,Data Cadastro\n'+empresas.map(e=>{let avs=avaliacoes.filter(a=>a.empresaId===e.id);let m=avs.length?(avs.reduce((s,a)=>s+a.estrelas,0)/avs.length).toFixed(1):0;return `"${e.nome}","${e.cnpj}","${e.email}","${e.telefone}","${e.categoria}","${m}","${avs.length}","${e.data}"`}).join('\n');let a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));a.download='empresas_avaliaMais.csv';a.click()}
+let params=new URLSearchParams(window.location.search);if(params.get('avaliar')){abrirAvaliar(params.get('avaliar'))}
+carregarHome();
+</script>
+</body>
+</html>
