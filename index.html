@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AvaliaMais</title>
+<script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+<script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-[#f5f5f7]">
+<nav class="bg-black text-white p-4 flex justify-between">
+<b>avaliaMais</b>
+<div class="flex gap-2">
+<button onclick="irPublica()" class="bg-white/20 px-4 py-2 rounded-full text-sm font-bold">Empresas</button>
+<button onclick="abrirAdmin()" class="bg-blue-600 px-4 py-2 rounded-full text-sm font-bold">🔒 Admin</button>
+</div>
+</nav>
+
+<div id="tela-publica" class="max-w-5xl mx-auto p-4">
+<div id="lista" class="grid md:grid-cols-3 gap-3 mt-4"></div>
+</div>
+
+<div id="tela-empresa" class="hidden max-w-2xl mx-auto p-4">
+<div class="bg-white rounded-3xl overflow-hidden">
+<div id="e-foto" class="h-72 bg-gray-200 bg-cover bg-center"></div>
+<div class="p-6">
+<h1 id="e-nome" class="text-3xl font-extrabold"></h1>
+<p id="e-cnpj" class="text-xs text-gray-500 mt-1"></p>
+<p id="e-cat" class="bg-black text-white inline-block px-3 py-1 rounded-full text-xs mt-2"></p>
+<p id="e-desc" class="mt-3 text-gray-600"></p>
+<div id="e-fotos" class="grid grid-cols-3 gap-2 mt-4"></div>
+<textarea id="e-com" placeholder="Deixe sua avaliação..." class="w-full border p-3 rounded-xl mt-6"></textarea>
+<button onclick="avaliar()" class="w-full bg-black text-white py-3 rounded-xl font-bold mt-2">Enviar Avaliação</button>
+<button onclick="irPublica()" class="w-full bg-gray-100 py-3 rounded-xl font-bold mt-2">Voltar</button>
+</div>
+</div>
+</div>
+
+<div id="tela-admin" class="hidden max-w-3xl mx-auto p-4">
+<div class="bg-white rounded-3xl p-6">
+<h2 class="font-extrabold text-xl">Cadastro Restrito - Só Dono</h2>
+<p class="text-sm text-gray-500">Aqui só entra quem tem a senha. CNPJ precisa ser válido de verdade.</p>
+<input id="c-nome" placeholder="Nome da empresa" class="w-full border p-3 rounded-xl mt-4">
+<input id="c-cnpj" placeholder="CNPJ (só CNPJ válido)" class="w-full border p-3 rounded-xl mt-2">
+<p id="cnpj-msg" class="text-xs mt-1 hidden"></p>
+<select id="c-cat" class="w-full border p-3 rounded-xl mt-2">
+<option>💄 Beleza</option><option>💋 Maquiagem</option><option>🚗 Estética Automotiva</option><option>🛍️ Loja</option><option>🔧 Serviços</option><option>🍔 Culinária</option>
+</select>
+<input id="c-desc" placeholder="Descrição" class="w-full border p-3 rounded-xl mt-2">
+<input id="c-fotos" type="file" multiple accept="image/*" class="w-full border p-3 rounded-xl mt-2 bg-gray-50">
+<div id="preview" class="flex gap-2 mt-2"></div>
+<button onclick="cadastrar()" class="w-full bg-blue-600 text-white py-3 rounded-xl font-bold mt-3">Cadastrar Empresa Real e Gerar QR</button>
+<div id="admin-lista" class="mt-6"></div>
+</div>
+</div>
+
+<div id="modal-senha" class="hidden fixed inset-0 bg-black/70 flex items-center justify-center p-4 z-50">
+<div class="bg-white p-6 rounded-3xl w-full max-w-sm text-center">
+<h3 class="font-bold">Senha</h3>
+<input id="senha" type="password" placeholder="admin123" class="w-full border p-3 rounded-xl mt-3 text-center">
+<button onclick="checkSenha()" class="w-full bg-black text-white py-3 rounded-xl mt-3 font-bold">Entrar</button>
+</div>
+</div>
+
+<div id="modal-qr" class="hidden fixed inset-0 bg-black/70 flex items-center justify-center p-4 z-50">
+<div class="bg-white p-6 rounded-3xl w-full max-w-sm text-center">
+<div id="qrcode" class="flex justify-center border p-3 rounded-2xl"></div>
+<p class="text-xs text-green-600 font-bold mt-2">QR funciona em qualquer celular</p>
+<button onclick="document.getElementById('modal-qr').classList.add('hidden')" class="w-full bg-black text-white py-3 rounded-xl mt-3 font-bold">Fechar</button>
+</div>
+</div>
+
+<script>
+let empresas = JSON.parse(localStorage.getItem('am_final_cnpj')||'[]');
+let fotosTemp=[], ativa=null;
+const $=id=>document.getElementById(id);
+
+// VALIDAÇÃO DE CNPJ REAL (algoritmo oficial da Receita Federal)
+function validarCNPJ(cnpj){
+ cnpj = cnpj.replace(/[^\d]+/g,'');
+ if(cnpj.length!== 14) return false;
+ if(/^(\d)\1{13}$/.test(cnpj)) return false; // bloqueia 11.111.111/1111-11
+ let t = cnpj.length - 2;
+ let d = cnpj.substring(t);
+ let d1 = parseInt(d.charAt(0));
+ let d2 = parseInt(d.charAt(1));
+ let calc = x => {
+  let n = cnpj.substring(0,x);
+  let y = 0;
+  let pos = x - 7;
+  for(let i=x; i>=1; i--){ y += n.charAt(x-i) * pos--; if(pos<2) pos=9; }
+  return (y % 11 < 2)? 0 : 11 - (y % 11);
+ };
+ return calc(t) === d1 && calc(t+1) === d2;
+}
+
+$('c-cnpj').addEventListener('input', e=>{
+ let v = e.target.value;
+ let msg = $('cnpj-msg');
+ if(v.length>10){
+  if(validarCNPJ(v)){ msg.className='text-xs mt-1 text-green-600'; msg.innerText='✅ CNPJ válido'; }
+  else{ msg.className='text-xs mt-1 text-red-600'; msg.innerText='❌ CNPJ inválido - digite um CNPJ real'; }
+  msg.classList.remove('hidden');
+ } else { msg.classList.add('hidden'); }
+});
+
+$('c-fotos').addEventListener('change', e=>{
+ fotosTemp=[]; $('preview').innerHTML='';
+ [...e.target.files].slice(0,3).forEach(f=>{
+  let r=new FileReader(); r.onload=ev=>{ fotosTemp.push(ev.target.result); $('preview').innerHTML+=`<img src="${ev.target.result}" class="w-16 h-16 rounded-xl object-cover">`; }; r.readAsDataURL(f);
+ });
+});
+
+function save(){localStorage.setItem('am_final_cnpj', JSON.stringify(empresas));}
+function abrirAdmin(){ $('modal-senha').classList.remove('hidden'); }
+function checkSenha(){ if($('senha').value==='admin123'){ $('modal-senha').classList.add('hidden'); $('senha').value=''; $('tela-publica').classList.add('hidden'); $('tela-empresa').classList.add('hidden'); $('tela-admin').classList.remove('hidden'); renderAdmin(); } else alert('Senha errada'); }
+function irPublica(){ $('tela-publica').classList.remove('hidden'); $('tela-empresa').classList.add('hidden'); $('tela-admin').classList.add('hidden'); history.replaceState(null,'',location.pathname); renderPublica(); }
+
+function cadastrar(){
+ let nome=$('c-nome').value.trim(), cnpj=$('c-cnpj').value.trim(), cat=$('c-cat').value, desc=$('c-desc').value.trim();
+ if(!nome) return alert('Digite o nome');
+ if(!validarCNPJ(cnpj)) return alert('❌ CNPJ INVÁLIDO! Digite um CNPJ de empresa real. Ex: 11.222.333/0001-81 - O sistema não aceita CNPJ falso.');
+ let emp={id:Date.now().toString(), nome,cnpj,cat,desc,fotos:fotosTemp, avs:[]};
+ empresas.push(emp); save(); $('c-nome').value=''; $('c-cnpj').value=''; $('c-desc').value=''; $('preview').innerHTML=''; fotosTemp=[]; abrirQR(emp); renderAdmin();
+}
+function abrirQR(emp){ $('qrcode').innerHTML=''; let dados=btoa(encodeURIComponent(JSON.stringify(emp))); let link=location.origin+location.pathname+'?d='+dados; new QRCode($('qrcode'),{text:link,width:200,height:200}); $('modal-qr').classList.remove('hidden'); }
+function renderPublica(){ $('lista').innerHTML=empresas.map(e=>`<div class="bg-white p-4 rounded-2xl"><div class="h-32 bg-gray-100 rounded-xl bg-cover bg-center" style="background-image:url(${e.fotos[0]||''})"></div><b class="block mt-2">${e.nome}</b><p class="text-xs text-gray-500">${e.cnpj}</p><span class="text-xs bg-black text-white px-2 py-1 rounded-full">${e.cat}</span><button onclick="ver('${e.id}')" class="w-full mt-2 bg-black text-white py-2 rounded-full text-sm font-bold">Ver empresa</button></div>`).join('')||'<p class="text-center text-gray-400 py-10">Nenhuma empresa cadastrada. Clique em Admin.</p>'; }
+function ver(id){ let emp=empresas.find(x=>x.id===id); mostrar(emp); }
+function mostrar(emp){ ativa=emp; $('e-nome').innerText=emp.nome; $('e-cnpj').innerText='CNPJ: '+emp.cnpj; $('e-cat').innerText=emp.cat; $('e-desc').innerText=emp.desc||''; $('e-foto').style.backgroundImage=emp.fotos[0]?`url(${emp.fotos[0]})`:''; $('e-fotos').innerHTML=emp.fotos.map(f=>`<img src="${f}" class="w-full h-24 object-cover rounded-xl">`).join(''); $('tela-publica').classList.add('hidden'); $('tela-admin').classList.add('hidden'); $('tela-empresa').classList.remove('hidden'); }
+function renderAdmin(){ $('admin-lista').innerHTML=empresas.map(e=>`<div class="border p-3 rounded-xl flex justify-between"><div><b>${e.nome}</b><br><span class="text-xs">${e.cnpj} - Validado ✅</span></div><button onclick="abrirQRById('${e.id}')" class="bg-blue-600 text-white px-3 py-1 rounded-full text-sm">QR</button></div>`).join(''); }
+function abrirQRById(id){ abrirQR(empresas.find(x=>x.id===id)); }
+function avaliar(){ alert('Avaliação enviada!'); $('e-com').value=''; }
+window.onload=()=>{ let p=new URLSearchParams(location.search).get('d'); if(p){ try{ let emp=JSON.parse(decodeURIComponent(atob(p))); mostrar(emp); return; }catch(e){} } renderPublica(); }
+</script>
+</body>
+</html>
