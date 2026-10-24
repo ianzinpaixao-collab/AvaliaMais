@@ -1,135 +1,130 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>AvaliaMais</title>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>TopFive Santa Rita 🏆</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
-<script src="https://cdn.tailwindcss.com"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}body{font-family:'Inter',sans-serif;background:#f2f2f2}
+.top{background:#0f0f0f;padding:10px 12px;display:flex;align-items:center;gap:6px;position:sticky;top:0;z-index:99;flex-wrap:wrap}
+.logo{color:#FFD700;font-weight:800;font-size:18px;margin-right:4px}.logo b{color:#fff}
+.pill{padding:6px 10px;border-radius:20px;font-size:11px;font-weight:700;border:0;cursor:pointer}
+.pill-emp{background:#2a2a2a;color:#fff}.pill-rank{background:#FFD700;color:#000}.pill-cad{background:#3b82f6;color:#fff}
+.count{margin:12px;background:#fff;padding:10px 14px;border-radius:10px;font-size:13px;border:1px solid #e5e5e5}
+.card{background:#fff;border-radius:16px;overflow:hidden;margin:0 12px 12px 12px;border:1px solid #e5e5e5}
+.card img.main-img{width:100%;height:180px;object-fit:cover;background:#fff;display:block}
+#fotoGrande{width:100% !important;height:auto !important;max-height:450px;object-fit:contain !important;background:#fff !important;padding:20px;display:block}
+.card-info{padding:10px 12px}.stars{color:#FFB800;font-size:12px}
+.btns{display:flex;gap:8px;margin-top:10px}.btn{flex:1;padding:9px;border-radius:20px;border:0;font-weight:700;font-size:11px;cursor:pointer}
+.btn-av{background:#22c55e;color:#fff}.btn-qr{background:#FFD700;color:#000}
+.modal{position:fixed;inset:0;background:#000a;display:none;align-items:center;justify-content:center;z-index:999;padding:12px}
+.modal.open{display:flex}.box{background:#fff;border-radius:16px;padding:18px;width:100%;max-width:500px;max-height:95vh;overflow:auto}
+.box input,.box select,.box textarea{width:100%;padding:12px;border:1px solid #ddd;border-radius:10px;margin:6px 0}
+.preview{display:flex;gap:6px;flex-wrap:wrap}.preview img{width:60px;height:60px;object-fit:cover;border-radius:8px}
+.page{display:none}.page.open{display:block}
+.rank-item{display:flex;align-items:center;gap:10px;background:#fff;margin:8px 12px;padding:10px;border-radius:12px;border:1px solid #eee}
+.rank-pos{font-size:20px;font-weight:800;width:36px;text-align:center}
+.gal{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}.gal img{width:70px;height:70px;border-radius:10px;object-fit:cover;border:2px solid transparent;cursor:pointer;background:#fff}.gal img.active{border-color:#FFD700}
+.star-rate{font-size:36px;cursor:pointer;display:flex;gap:4px}.star-rate span{color:#ddd}.star-rate span.on{color:#FFB800}
+.form-card{background:#fafafa;border:1px solid #eee;border-radius:14px;padding:14px;margin-top:12px}
+.coment-card{background:#fff;border:1px solid #eee;border-radius:14px;padding:12px;margin:8px 0;display:flex;gap:10px}
+.avatar{width:40px;height:40px;border-radius:50%;background:#FFD700;color:#000;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:16px}
+</style>
 </head>
-<body class="bg-[#f5f5f7]">
-<nav class="bg-black text-white p-4 flex justify-between">
-<b>avaliaMais</b>
-<div class="flex gap-2">
-<button onclick="irPublica()" class="bg-white/20 px-4 py-2 rounded-full text-sm font-bold">Empresas</button>
-<button onclick="abrirAdmin()" class="bg-blue-600 px-4 py-2 rounded-full text-sm font-bold">🔒 Admin</button>
-</div>
-</nav>
+<body>
+<div class="top"><div class="logo">Top<b>Five</b></div>
+<button class="pill pill-emp" onclick="showHome()">Empresas</button>
+<button class="pill pill-rank" onclick="showRank()">⭐ Ranking</button>
+<button class="pill pill-cad" onclick="openCad()">📋 Cadastrar</button></div>
+<div id="home"><div class="count">☁️ Conectado | ✅ <span id="qtd">0</span> empresa(s) - <span onclick="limparDuplicadas()" style="color:red;text-decoration:underline;cursor:pointer;font-size:11px">limpar duplicadas</span></div><div id="lista"></div></div>
+<div id="pageRank" class="page"><div style="margin:12px"><button class="pill pill-emp" onclick="showHome()">← Voltar</button><h2 style="margin:12px 0">🏆 Ranking</h2></div><div id="listaRank"></div></div>
+<div id="pageEmp" class="page" style="padding:12px"><button class="pill pill-emp" onclick="showHome()">← Voltar</button><div id="detalhe" style="margin-top:12px"></div></div>
 
-<div id="tela-publica" class="max-w-5xl mx-auto p-4">
-<div id="lista" class="grid md:grid-cols-3 gap-3 mt-4"></div>
-</div>
+<div class="modal" id="modalCad"><div class="box"><h3>Cadastrar Empresa</h3><input id="nome" placeholder="Nome *"><input id="cnpj" placeholder="CNPJ *"><select id="cat"><option value="">Categoria *</option><option>Venda de Serviços</option><option>Confeitaria</option><option>Barbearia</option><option>Restaurante</option><option>Moda</option><option>Outros</option></select>
+<select id="plano" style="background:#fffde7;font-weight:700;border:2px solid #FFD700"><option value="vitalicio">⭐ VITALÍCIO (Antigas - Grátis)</option><option value="mensal" selected>💰 MENSAL - R$ 29,90</option><option value="trimestral">💰 TRIMESTRAL - R$ 79,90</option><option value="anual">💰 ANUAL - R$ 290</option></select>
+<textarea id="desc" placeholder="Descrição *"></textarea><label style="font-size:12px;font-weight:700">Fotos (até 5)</label><input type="file" id="fotos" accept="image/*" multiple onchange="previewF()"><div class="preview" id="prev"></div><input type="password" id="senha" placeholder="Senha ADM *"><div id="areaQR" style="display:none;text-align:center;margin-top:12px;border-top:2px solid #FFD700;padding:12px;background:#fffde7;border-radius:10px"><p style="font-weight:800">✅ Salvo!</p><div id="qrcode" style="display:flex;justify-content:center;margin:10px 0;background:#fff;padding:10px;border-radius:10px"></div><p id="linkQR" style="font-size:10px;word-break:break-all"></p></div><button style="width:100%;padding:14px;background:#FFD700;border:0;border-radius:10px;font-weight:800;margin-top:10px" id="btnSalvar" onclick="salvarNuvem()">SALVAR</button><button style="width:100%;padding:10px;background:#eee;border:0;border-radius:10px;margin-top:6px" onclick="closeCad()">Fechar</button></div></div>
+<div class="modal" id="modalQR"><div class="box" style="text-align:center"><h3>🔒 Gerar QR</h3><input type="password" id="senhaQR" placeholder="Senha ADM *"><div id="areaQR2" style="display:none;margin-top:12px"><div id="qrcode2" style="display:flex;justify-content:center;margin:10px 0;background:#fff;padding:10px;border-radius:10px"></div><p id="linkQR2" style="font-size:11px;word-break:break-all"></p></div><button style="width:100%;padding:12px;background:#FFD700;border:0;border-radius:10px;font-weight:800;margin-top:10px" onclick="confirmarQR()">GERAR QR CODE</button><button style="width:100%;padding:10px;background:#eee;border:0;border-radius:10px;margin-top:6px" onclick="closeQR()">Fechar</button></div></div>
 
-<div id="tela-empresa" class="hidden max-w-2xl mx-auto p-4">
-<div class="bg-white rounded-3xl overflow-hidden">
-<div id="e-foto" class="h-72 bg-gray-200 bg-cover bg-center"></div>
-<div class="p-6">
-<h1 id="e-nome" class="text-3xl font-extrabold"></h1>
-<p id="e-cnpj" class="text-xs text-gray-500 mt-1"></p>
-<p id="e-cat" class="bg-black text-white inline-block px-3 py-1 rounded-full text-xs mt-2"></p>
-<p id="e-desc" class="mt-3 text-gray-600"></p>
-<div id="e-fotos" class="grid grid-cols-3 gap-2 mt-4"></div>
-<textarea id="e-com" placeholder="Deixe sua avaliação..." class="w-full border p-3 rounded-xl mt-6"></textarea>
-<button onclick="avaliar()" class="w-full bg-black text-white py-3 rounded-xl font-bold mt-2">Enviar Avaliação</button>
-<button onclick="irPublica()" class="w-full bg-gray-100 py-3 rounded-xl font-bold mt-2">Voltar</button>
-</div>
-</div>
-</div>
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getFirestore, collection, addDoc, getDocs, doc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+const firebaseConfig = { apiKey: "AIzaSyAMq40L6kC7OrViDddCqafYduk4umW8z6I", authDomain: "topfive-f8339.firebaseapp.com", projectId: "topfive-f8339", storageBucket: "topfive-f8339.firebasestorage.app", messagingSenderId: "723054302672", appId: "1:723054302672:web:2fea11999040d9474755d5" };
+const app = initializeApp(firebaseConfig); const db = getFirestore(app);
 
-<div id="tela-admin" class="hidden max-w-3xl mx-auto p-4">
-<div class="bg-white rounded-3xl p-6">
-<h2 class="font-extrabold text-xl">Cadastro Restrito - Só Dono</h2>
-<p class="text-sm text-gray-500">Aqui só entra quem tem a senha. CNPJ precisa ser válido de verdade.</p>
-<input id="c-nome" placeholder="Nome da empresa" class="w-full border p-3 rounded-xl mt-4">
-<input id="c-cnpj" placeholder="CNPJ (só CNPJ válido)" class="w-full border p-3 rounded-xl mt-2">
-<p id="cnpj-msg" class="text-xs mt-1 hidden"></p>
-<select id="c-cat" class="w-full border p-3 rounded-xl mt-2">
-<option>💄 Beleza</option><option>💋 Maquiagem</option><option>🚗 Estética Automotiva</option><option>🛍️ Loja</option><option>🔧 Serviços</option><option>🍔 Culinária</option>
-</select>
-<input id="c-desc" placeholder="Descrição" class="w-full border p-3 rounded-xl mt-2">
-<input id="c-fotos" type="file" multiple accept="image/*" class="w-full border p-3 rounded-xl mt-2 bg-gray-50">
-<div id="preview" class="flex gap-2 mt-2"></div>
-<button onclick="cadastrar()" class="w-full bg-blue-600 text-white py-3 rounded-xl font-bold mt-3">Cadastrar Empresa Real e Gerar QR</button>
-<div id="admin-lista" class="mt-6"></div>
-</div>
-</div>
+// ===== CONFIGURA SEU PIX AQUI - TROCA SÓ ESSA LINHA =====
+const CHAVE_PIX = "08518207355"; // ex: "12345678900"
+const NOME_PIX = "Ian carlo paixao dos santos";
+const CIDADE_PIX = "SANTA RITA";
+const VALOR_MENSAL = 29.90;
 
-<div id="modal-senha" class="hidden fixed inset-0 bg-black/70 flex items-center justify-center p-4 z-50">
-<div class="bg-white p-6 rounded-3xl w-full max-w-sm text-center">
-<h3 class="font-bold">Senha</h3>
-<input id="senha" type="password" placeholder="admin123" class="w-full border p-3 rounded-xl mt-3 text-center">
-<button onclick="checkSenha()" class="w-full bg-black text-white py-3 rounded-xl mt-3 font-bold">Entrar</button>
-</div>
-</div>
+const SENHA_ADM = "20100506"; let tempFotos=[]; let empresaQRAtual=""; let empresas=[]; let notaAtual=5;
+const EMPRESAS_VITALICIAS = ["artbuffet", "ideia print"];
+function estaExpirada(e){ let n=e.nome.toLowerCase(); if(EMPRESAS_VITALICIAS.some(x=>n.includes(x)) || e.plano==="vitalicio" || !e.plano) return false; if(!e.expiraEm) return false; return new Date() > new Date(e.expiraEm); }
 
-<div id="modal-qr" class="hidden fixed inset-0 bg-black/70 flex items-center justify-center p-4 z-50">
-<div class="bg-white p-6 rounded-3xl w-full max-w-sm text-center">
-<div id="qrcode" class="flex justify-center border p-3 rounded-2xl"></div>
-<p class="text-xs text-green-600 font-bold mt-2">QR funciona em qualquer celular</p>
-<button onclick="document.getElementById('modal-qr').classList.add('hidden')" class="w-full bg-black text-white py-3 rounded-xl mt-3 font-bold">Fechar</button>
-</div>
-</div>
-
-<script>
-let empresas = JSON.parse(localStorage.getItem('am_final_cnpj')||'[]');
-let fotosTemp=[], ativa=null;
-const $=id=>document.getElementById(id);
-
-// VALIDAÇÃO DE CNPJ REAL (algoritmo oficial da Receita Federal)
-function validarCNPJ(cnpj){
- cnpj = cnpj.replace(/[^\d]+/g,'');
- if(cnpj.length!== 14) return false;
- if(/^(\d)\1{13}$/.test(cnpj)) return false; // bloqueia 11.111.111/1111-11
- let t = cnpj.length - 2;
- let d = cnpj.substring(t);
- let d1 = parseInt(d.charAt(0));
- let d2 = parseInt(d.charAt(1));
- let calc = x => {
-  let n = cnpj.substring(0,x);
-  let y = 0;
-  let pos = x - 7;
-  for(let i=x; i>=1; i--){ y += n.charAt(x-i) * pos--; if(pos<2) pos=9; }
-  return (y % 11 < 2)? 0 : 11 - (y % 11);
- };
- return calc(t) === d1 && calc(t+1) === d2;
+// GERA CODIGO PIX COPIA E COLA OFICIAL
+function geraPix(chave, valor, nome, cidade, txid="TOPFIVE"){
+  function tlv(id, val){ let len=val.length.toString().padStart(2,'0'); return id+len+val; }
+  let payload = tlv("00","01") + tlv("01","12");
+  let merchant = tlv("00","BR.GOV.BCB.PIX") + tlv("01",chave);
+  payload += tlv("26",merchant);
+  payload += tlv("52","0000") + tlv("53","986") + tlv("54",valor.toFixed(2)) + tlv("58","BR") + tlv("59",nome.substring(0,25)) + tlv("60",cidade.substring(0,15)) + tlv("62", tlv("05",txid));
+  payload += "6304";
+  let crc=0xFFFF; for(let i=0;i<payload.length;i++){ crc^=payload.charCodeAt(i)<<8; for(let j=0;j<8;j++){ if(crc&0x8000) crc=(crc<<1)^0x1021; else crc<<=1; crc&=0xFFFF; } } let crcStr=crc.toString(16).toUpperCase().padStart(4,'0');
+  return payload+crcStr;
 }
 
-$('c-cnpj').addEventListener('input', e=>{
- let v = e.target.value;
- let msg = $('cnpj-msg');
- if(v.length>10){
-  if(validarCNPJ(v)){ msg.className='text-xs mt-1 text-green-600'; msg.innerText='✅ CNPJ válido'; }
-  else{ msg.className='text-xs mt-1 text-red-600'; msg.innerText='❌ CNPJ inválido - digite um CNPJ real'; }
-  msg.classList.remove('hidden');
- } else { msg.classList.add('hidden'); }
-});
+async function carregarNuvem(){ const snap = await getDocs(collection(db, "empresas")); let todas=[]; snap.forEach(d=>{ todas.push({...d.data(),_id:d.id}); }); let unicas={}; todas.forEach(e=>{ let k=e.nome.toLowerCase().trim(); if(!unicas[k]) unicas[k]=e; }); empresas=Object.values(unicas); render(); const urlParams = new URLSearchParams(window.location.search); const nomeEmpresa = urlParams.get('empresa'); if(nomeEmpresa){ let nomeDec = decodeURIComponent(nomeEmpresa).toLowerCase(); let idx = empresas.findIndex(e=>e.nome.toLowerCase()===nomeDec); if(idx>=0){ setTimeout(()=>abrir(idx), 600); } } }
+carregarNuvem();
+function calculaMedia(e){ if(!e.avaliacoes||e.avaliacoes.length===0) return null; return (e.avaliacoes.reduce((s,a)=>s+a.nota,0)/e.avaliacoes.length); }
+window.limparDuplicadas=async()=>{ if(!confirm("Apagar duplicadas?")) return; const snap = await getDocs(collection(db, "empresas")); let mapa={}; for(let d of snap.docs){ let e=d.data(); let k=e.nome.toLowerCase().trim(); if(!mapa[k]){ mapa[k]=d.id; } else { await deleteDoc(doc(db,"empresas",d.id)); } } alert("Limpo!"); carregarNuvem(); }
+window.previewF=function(){ let files=document.getElementById("fotos").files; if(files.length>5){alert("Máximo 5 fotos!"); return;} tempFotos=[];document.getElementById("prev").innerHTML=""; for(let f of files){ let r=new FileReader(); r.onload=ev=>{ let img=new Image(); img.onload=()=>{ let c=document.createElement("canvas"); let max=800; let w=img.width,h=img.height; if(w>h){if(w>max){h*=max/w;w=max}}else{if(h>max){w*=max/h;h=max}} c.width=w;c.height=h; c.getContext("2d").drawImage(img,0,0,w,h); let small=c.toDataURL("image/jpeg",0.5); tempFotos.push(small); let im=document.createElement("img"); im.src=small; document.getElementById("prev").appendChild(im); }; img.src=ev.target.result; }; r.readAsDataURL(f); } }
+window.render=function(){ document.getElementById("qtd").innerText=empresas.length; if(empresas.length===0){document.getElementById("lista").innerHTML=`<div class="empty"><h3>Nenhuma empresa</h3></div>`;return;} document.getElementById("lista").innerHTML=empresas.map((e,i)=>{ let media=calculaMedia(e); let expirada=estaExpirada(e); let txt=media===null?"Sem avaliações":`★ ${media.toFixed(1)} (${e.avaliacoes.length})`; let badge=expirada?`<span style="background:red;color:#fff;font-size:9px;padding:2px 6px;border-radius:10px">EXPIRADO</span>`:e.plano&&e.plano!=="vitalicio"?`<span style="background:#22c55e;color:#fff;font-size:9px;padding:2px 6px;border-radius:10px">${e.plano}</span>`:`<span style="background:#FFD700;color:#000;font-size:9px;padding:2px 6px;border-radius:10px">VITALÍCIO</span>`; return `<div class="card" style="${expirada?'opacity:0.6':''}"><img class="main-img" src="${e.fotos[0]}" onclick="abrir(${i})"><div class="card-info"><b>${e.nome}</b> ${badge}<br><span class="stars">${txt}</span><div class="btns"><button class="btn btn-av" onclick="abrir(${i})">${expirada?'🔒 Ver':'⭐ Avaliar'}</button><button class="btn btn-qr" onclick="pedirSenhaQR('${e.nome.replace(/'/g,"\\'")}')">📍 QR</button></div></div></div>`; }).join(""); }
+window.openCad=()=>document.getElementById("modalCad").classList.add("open"); window.closeCad=()=>{document.getElementById("modalCad").classList.remove("open");document.getElementById("areaQR").style.display="none";document.getElementById("qrcode").innerHTML="";}; window.closeQR=()=>{document.getElementById("modalQR").classList.remove("open");document.getElementById("areaQR2").style.display="none";document.getElementById("qrcode2").innerHTML="";}; window.pedirSenhaQR=n=>{empresaQRAtual=n;document.getElementById("modalQR").classList.add("open");}; window.confirmarQR=()=>{if(document.getElementById("senhaQR").value!==SENHA_ADM){alert("Senha incorreta!");return;}let link=`https://ianzinpaixao-collab.github.io/TopFive-Santa-Rita/?empresa=${encodeURIComponent(empresaQRAtual)}`;document.getElementById("areaQR2").style.display="block";document.getElementById("qrcode2").innerHTML="";new QRCode(document.getElementById("qrcode2"),{text:link,width:200,height:200});document.getElementById("linkQR2").innerText=link;};
+window.salvarNuvem=async()=>{ let nome=document.getElementById("nome").value.trim(); let cnpj=document.getElementById("cnpj").value.trim(); let cat=document.getElementById("cat").value; let desc=document.getElementById("desc").value.trim(); let senha=document.getElementById("senha").value; let plano=document.getElementById("plano").value; if(!nome||!cnpj||!cat||!desc){alert("Preencha todos *");return} if(senha!==SENHA_ADM){alert("Senha incorreta!");return} if(tempFotos.length===0){alert("Escolha 1 foto");return} let fotos=tempFotos.slice(0,5); let btn=document.getElementById("btnSalvar"); btn.innerText="Salvando..."; btn.disabled=true; let expiraEm=null; if(plano!=="vitalicio"){ let d=new Date(); let meses=plano==="mensal"?1:plano==="trimestral"?3:12; d.setMonth(d.getMonth()+meses); expiraEm=d.toISOString(); } try{ await addDoc(collection(db,"empresas"),{nome,cnpj,categoria:cat,desc,fotos,avaliacoes:[],plano,expiraEm,criadoEm:new Date().toISOString()}); let link=`https://ianzinpaixao-collab.github.io/TopFive-Santa-Rita/?empresa=${encodeURIComponent(nome)}`; document.getElementById("areaQR").style.display="block"; document.getElementById("qrcode").innerHTML=""; new QRCode(document.getElementById("qrcode"),{text:link,width:200,height:200}); document.getElementById("linkQR").innerText=link; btn.innerText="SALVO! ✅"; await carregarNuvem(); }catch(e){ alert("Erro: "+e.message); btn.innerText="SALVAR"; btn.disabled=false; } };
+window.setNota=n=>{ notaAtual=n; document.querySelectorAll("#estrelasClick span").forEach((s,i)=>{ s.className = i < n? "on" : ""; }); document.getElementById("textoNota").innerText = n+" "+(n===1?"estrela":"estrelas"); }
 
-$('c-fotos').addEventListener('change', e=>{
- fotosTemp=[]; $('preview').innerHTML='';
- [...e.target.files].slice(0,3).forEach(f=>{
-  let r=new FileReader(); r.onload=ev=>{ fotosTemp.push(ev.target.result); $('preview').innerHTML+=`<img src="${ev.target.result}" class="w-16 h-16 rounded-xl object-cover">`; }; r.readAsDataURL(f);
- });
-});
-
-function save(){localStorage.setItem('am_final_cnpj', JSON.stringify(empresas));}
-function abrirAdmin(){ $('modal-senha').classList.remove('hidden'); }
-function checkSenha(){ if($('senha').value==='admin123'){ $('modal-senha').classList.add('hidden'); $('senha').value=''; $('tela-publica').classList.add('hidden'); $('tela-empresa').classList.add('hidden'); $('tela-admin').classList.remove('hidden'); renderAdmin(); } else alert('Senha errada'); }
-function irPublica(){ $('tela-publica').classList.remove('hidden'); $('tela-empresa').classList.add('hidden'); $('tela-admin').classList.add('hidden'); history.replaceState(null,'',location.pathname); renderPublica(); }
-
-function cadastrar(){
- let nome=$('c-nome').value.trim(), cnpj=$('c-cnpj').value.trim(), cat=$('c-cat').value, desc=$('c-desc').value.trim();
- if(!nome) return alert('Digite o nome');
- if(!validarCNPJ(cnpj)) return alert('❌ CNPJ INVÁLIDO! Digite um CNPJ de empresa real. Ex: 11.222.333/0001-81 - O sistema não aceita CNPJ falso.');
- let emp={id:Date.now().toString(), nome,cnpj,cat,desc,fotos:fotosTemp, avs:[]};
- empresas.push(emp); save(); $('c-nome').value=''; $('c-cnpj').value=''; $('c-desc').value=''; $('preview').innerHTML=''; fotosTemp=[]; abrirQR(emp); renderAdmin();
+window.renovarAutomatico = async (idEmpresa, nomeEmpresa) => {
+  if(CHAVE_PIX==="SEU_CPF_AQUI"){ alert("Configure sua chave PIX no código primeiro! Procure por CHAVE_PIX"); return; }
+  if(!confirm("Confirma que você já fez o PIX de R$ "+VALOR_MENSAL+"?")) return;
+  let novaData = new Date(); novaData.setMonth(novaData.getMonth() + 1);
+  try{
+    await updateDoc(doc(db,"empresas",idEmpresa),{ expiraEm: novaData.toISOString(), ultimaRenovacao: new Date().toISOString() });
+    alert("✅ Renovado até " + novaData.toLocaleDateString('pt-BR') + "!");
+    window.open(`https://wa.me/5598984107718?text=Acabei%20de%20renovar%20${encodeURIComponent(nomeEmpresa)}%20no%20PIX%20R$${VALOR_MENSAL}%20-%20ID%20${idEmpresa}`,"_blank");
+    carregarNuvem(); showHome();
+  }catch(err){ alert("Erro: "+err.message); }
 }
-function abrirQR(emp){ $('qrcode').innerHTML=''; let dados=btoa(encodeURIComponent(JSON.stringify(emp))); let link=location.origin+location.pathname+'?d='+dados; new QRCode($('qrcode'),{text:link,width:200,height:200}); $('modal-qr').classList.remove('hidden'); }
-function renderPublica(){ $('lista').innerHTML=empresas.map(e=>`<div class="bg-white p-4 rounded-2xl"><div class="h-32 bg-gray-100 rounded-xl bg-cover bg-center" style="background-image:url(${e.fotos[0]||''})"></div><b class="block mt-2">${e.nome}</b><p class="text-xs text-gray-500">${e.cnpj}</p><span class="text-xs bg-black text-white px-2 py-1 rounded-full">${e.cat}</span><button onclick="ver('${e.id}')" class="w-full mt-2 bg-black text-white py-2 rounded-full text-sm font-bold">Ver empresa</button></div>`).join('')||'<p class="text-center text-gray-400 py-10">Nenhuma empresa cadastrada. Clique em Admin.</p>'; }
-function ver(id){ let emp=empresas.find(x=>x.id===id); mostrar(emp); }
-function mostrar(emp){ ativa=emp; $('e-nome').innerText=emp.nome; $('e-cnpj').innerText='CNPJ: '+emp.cnpj; $('e-cat').innerText=emp.cat; $('e-desc').innerText=emp.desc||''; $('e-foto').style.backgroundImage=emp.fotos[0]?`url(${emp.fotos[0]})`:''; $('e-fotos').innerHTML=emp.fotos.map(f=>`<img src="${f}" class="w-full h-24 object-cover rounded-xl">`).join(''); $('tela-publica').classList.add('hidden'); $('tela-admin').classList.add('hidden'); $('tela-empresa').classList.remove('hidden'); }
-function renderAdmin(){ $('admin-lista').innerHTML=empresas.map(e=>`<div class="border p-3 rounded-xl flex justify-between"><div><b>${e.nome}</b><br><span class="text-xs">${e.cnpj} - Validado ✅</span></div><button onclick="abrirQRById('${e.id}')" class="bg-blue-600 text-white px-3 py-1 rounded-full text-sm">QR</button></div>`).join(''); }
-function abrirQRById(id){ abrirQR(empresas.find(x=>x.id===id)); }
-function avaliar(){ alert('Avaliação enviada!'); $('e-com').value=''; }
-window.onload=()=>{ let p=new URLSearchParams(location.search).get('d'); if(p){ try{ let emp=JSON.parse(decodeURIComponent(atob(p))); mostrar(emp); return; }catch(e){} } renderPublica(); }
-</script>
-</body>
-</html>
+
+window.abrir=i=>{
+  notaAtual=5; let e=empresas[i]; 
+  if(estaExpirada(e)){
+    let valorPlano = e.plano==="trimestral"?79.90:e.plano==="anual"?290:29.90;
+    let pixCode = CHAVE_PIX!=="SEU_CPF_AQUI" ? geraPix(CHAVE_PIX, valorPlano, NOME_PIX, CIDADE_PIX, e._id.substring(0,10)) : "";
+    document.getElementById("home").style.display="none"; document.getElementById("pageRank").classList.remove("open"); document.getElementById("pageEmp").classList.add("open");
+    document.getElementById("detalhe").innerHTML=`
+      <div class="card" style="text-align:center;padding:20px">
+        <h2 style="font-size:40px">🔒</h2><h2>${e.nome}</h2>
+        <p style="margin:12px 0;color:#666">Plano ${e.plano} venceu em ${new Date(e.expiraEm).toLocaleDateString('pt-BR')}</p>
+        <div style="background:#f0fdf4;border:2px solid #22c55e;border-radius:12px;padding:14px;margin:12px 0;text-align:left">
+          <h4 style="color:#166534">💰 Renovar - R$ ${valorPlano.toFixed(2).replace('.',',')}</h4>
+          <p style="font-size:12px">✅ QR volta na hora<br>✅ Volta pro Ranking<br>✅ Avaliações liberadas</p>
+        </div>
+        <div style="background:#fff;padding:12px;border-radius:12px;border:1px solid #eee">
+          <p style="font-size:12px;font-weight:700">📱 Pague com PIX QR Code</p>
+          <div id="qrcodePix" style="display:flex;justify-content:center;margin:10px 0"></div>
+          <p style="font-size:10px;word-break:break-all;background:#f5f5f5;padding:8px;border-radius:8px" id="pixCopiaCola">${pixCode || "Configure sua CHAVE_PIX no código"}</p>
+          <button onclick="navigator.clipboard.writeText(document.getElementById('pixCopiaCola').innerText);alert('Código PIX copiado!')" style="margin-top:8px;background:#FFD700;border:0;padding:8px 14px;border-radius:20px;font-weight:700">📋 Copiar código PIX</button>
+          <p style="font-size:11px;color:#666;margin-top:8px">Chave: ${CHAVE_PIX}<br>Nome: ${NOME_PIX}</p>
+        </div>
+        <button onclick="renovarAutomatico('${e._id}','${e.nome.replace(/'/g,"\\'")}')" style="width:100%;margin-top:14px;background:#22c55e;color:#fff;padding:16px;border-radius:12px;border:0;font-weight:800">✅ Já paguei, liberar agora</button>
+        <button class="pill pill-emp" style="margin-top:10px" onclick="showHome()">Voltar</button>
+      </div>`;
+    if(pixCode){ setTimeout(()=>{ document.getElementById("qrcodePix").innerHTML=""; new QRCode(document.getElementById("qrcodePix"),{text:pixCode,width:200,height:200}); },100); }
+    return;
+  }
+  let media=calculaMedia(e); let mediaTexto = media===null? `<span style="color:#999">Sem avaliações ainda</span>` : `<span class="stars" style="font-size:16px">${"★".repeat(Math.round(media))}${"☆".repeat(5-Math.round(media))} ${media.toFixed(1)} (${e.avaliacoes.length})</span>`;
+  document.getElementById("home").style.display="none"; document.getElementById("pageRank").classList.remove("open"); document.getElementById("pageEmp").classList.add("open");
+  let galeriaHTML = e.fotos.map((f,idx)=>`<img src="${f}" class="${idx===0?'active':''}" onclick="trocarFoto(this,'${f}')">`).join("");
+  let comentariosHTML = e.avaliacoes&&e.avaliacoes.length ? e.avaliacoes.map(a=>{ let nomeExibir=a.nome||a.email.split("@")[0]; let inicial=nomeExibir.charAt(0).toUpperCase(); return `<div class="coment-card"><div class="avatar">${inicial}</div><div style="flex:1"><b>${nomeExibir}</b> <span class="stars">${"★".repeat(a.nota)}</span><p style="font-size:13px;margin-top:4px">${a.coment||""}</p></div></div>`; }).join("") : `<p style='text-align:center;color:#999;padding:20px'>Nenhuma avaliação ainda</p>`;
+  document.getElementById("detalhe").innerHTML=`<div class="card"><img id="fotoGrande" src="${e.fotos[0]}"><div style="padding:10px"><div class="gal">${galeriaHTML}</div></div><div class="card-info"><h2>${e.nome}</h2><div style="margin:6px 0">${mediaTexto}</div><p style="margin:8px 0">${e.desc}</p><p style="font-size:12px;color:#666">${e.categoria} | ${e.plano||'vitalicio'} ${e.expiraEm?'até '+new Date(e.expiraEm).toLocaleDateString('pt-BR'):''}</p><div class="form-card"><h4>Deixe sua avaliação</h4><input id="nomeA" placeholder="Seu nome"><input id="emailA" placeholder="Seu email"><div id="estrelasClick" class="star-rate"><span class="on" onclick="setNota(1)">★</span><span class="on" onclick="setNota(2)">★</span><span class="on" onclick="setNota(3)">★</span><span class="on" onclick="setNota(4)">★</span><span class="on" onclick="setNota(5)">★</span></div><small id="textoNota">5 estrelas</small><textarea id="comentA" placeholder="Como foi..."></textarea><button class="btn btn-av" style="width:100%;padding:14px;margin-top:10px" onclick="avaliar(${i})">Enviar avaliação</button></div><div style="margin-top:20px"><h3>⭐ Avaliações (${e.avaliacoes?e.avaliacoes.length:0})</h3>${comentariosHTML}</div></div></div>
